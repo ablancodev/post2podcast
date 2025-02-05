@@ -4,7 +4,7 @@ class Post2Podcast_RSS {
 
     public static function init() {
         // generamos un feed para los lectores de podcast a partir de los c2c_episodes
-        add_action( 'init', array( __CLASS__, 'add_feed' ) );
+        //add_action( 'init', array( __CLASS__, 'add_feed' ) );
         add_action( 'template_redirect', array( __CLASS__, 'template_redirect' ) );
 
     }
@@ -72,28 +72,35 @@ class Post2Podcast_RSS {
     }
     */
 
-public static function render_feed() {
+public static function render_feed( $podcast ) {
     header('Content-Type: application/rss+xml; charset=UTF-8');
 
     $args = array(
         'post_type' => 'p2p_episode',
-        'posts_per_page' => -1
+        'posts_per_page' => -1,
+        'tax_query' => array(
+            array(
+                'taxonomy' => 'p2p_podcast',
+                'field' => 'slug',
+                'terms' => $podcast->slug
+            )
+        )
     );
     $episodes = get_posts( $args );
 
     $feed = '<?xml version="1.0" encoding="UTF-8"?>';
     $feed .= '<rss xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">';
     $feed .= '<channel>';
-    $feed .= '<title>Cuentos para aprender</title>';
+    $feed .= '<title>' . $podcast->name . '</title>';
     // description
     $feed .= '<description><![CDATA[¡Sumérgete en el mundo de Cuentos para Aprender, el podcast perfecto para los pequeños curiosos! Cada episodio es una aventura en sí misma, narrando cuentos mágicos que abarcan desde la ciencia y la tecnología hasta la historia y más allá. Con personajes entrañables y lecciones valiosas en cada historia, tus niños se embarcarán en un viaje de descubrimiento y diversión. Suscríbete a Cuentos para Aprender y acompaña a tus hijos en un camino lleno de conocimiento y alegría. Ideal para la hora del cuento, antes de dormir o cualquier momento de aprendizaje y entretenimiento.]]></description>';
     $feed .= '<link>' . get_bloginfo( 'url' ) . '</link>';
-    $feed .= '<atom:link href="' . get_feed_link( 'podcast' ) . '" rel="self" type="application/rss+xml" />';
+    $feed .= '<atom:link href="' . get_feed_link( 'podcast-' . $podcast->slug ) . '" rel="self" type="application/rss+xml" />';
     $feed .= '<language>es</language>';
     $feed .= '<itunes:author>Antonio Blanco Oliva</itunes:author>';
-    $feed .= '<itunes:summary><![CDATA[¡Sumérgete en el mundo de Cuentos para Aprender, el podcast perfecto para los pequeños curiosos! Cada episodio es una aventura en sí misma, narrando cuentos mágicos que abarcan desde la ciencia y la tecnología hasta la historia y más allá. Con personajes entrañables y lecciones valiosas en cada historia, tus niños se embarcarán en un viaje de descubrimiento y diversión. Suscríbete a Cuentos para Aprender y acompaña a tus hijos en un camino lleno de conocimiento y alegría. Ideal para la hora del cuento, antes de dormir o cualquier momento de aprendizaje y entretenimiento.]]></itunes:summary>';
+    $feed .= '<itunes:summary><![CDATA[' . $podcast->description . ']]></itunes:summary>';
     $feed .= '<itunes:owner>';
-    $feed .= '<itunes:name>Cuentos para aprender</itunes:name>';
+    $feed .= '<itunes:name>' . $podcast->name . '</itunes:name>';
     $feed .= '<itunes:email>' . get_bloginfo( 'admin_email' ) . '</itunes:email>';
     $feed .= '</itunes:owner>';
     $feed .= '<itunes:image href="https://ablancodev.com/wp-content/uploads/2024/09/cuentos-para-aprender_portada.png" />';
@@ -132,9 +139,25 @@ public static function render_feed() {
 }
 
     public static function template_redirect() {
+        /*
         if ( is_feed( 'podcast' ) ) {
             self::render_feed();
         }
+        */
+
+        // un feed por cada podcast
+        $podcasts = get_terms( array(
+            'taxonomy' => 'p2p_podcast',
+            'hide_empty' => false
+        ) );
+
+        foreach ( $podcasts as $podcast ) {
+            add_feed( 'podcast-' . $podcast->slug, function() use ($podcast) {
+                self::render_feed($podcast);
+            });
+        }
+
+        flush_rewrite_rules();
     }
 }
 Post2Podcast_RSS::init();

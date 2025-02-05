@@ -1,6 +1,7 @@
 <?php
 /**
  * Plugin Name: Post2Podcast
+ * Version: 1.0.0
  */
 
     require_once( 'class-p2p-cpt.php' );

@@ -49,6 +49,16 @@ class Post2Podcast_CPT {
         );
 
         register_post_type( 'p2p_episode', $args );
+
+        // tax: p2p_podcast
+        register_taxonomy( 'p2p_podcast', 'p2p_episode', array(
+            'label'        => __( 'Podcasts', 'post2podcast' ),
+            'public'       => true,
+            'hierarchical' => false,
+            'show_ui'      => true,
+            'rewrite'      => array( 'slug' => 'podcast' )
+        ) );
+
     }
 
     // le creamos un metabox con un botón para generarle un audio al post, y en caso de tenerlo, que lo muestre
